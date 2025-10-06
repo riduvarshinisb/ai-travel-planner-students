@@ -1,0 +1,16 @@
+{
+  "name": "ai-travel-planner-students",
+  "version": "1.0.0",
+  "description": "AI-powered travel planner for students with budget optimization",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "vercel build"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}

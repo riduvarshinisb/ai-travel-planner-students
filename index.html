@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Travel Planner - AI Powered</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-plane-departure"></i>
+                    <span>Student Travel AI</span>
+                </div>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Plan Your Perfect Student Adventure</h1>
+                <p class="hero-subtitle">AI-powered travel planning with student budgets in mind. Get personalized itineraries, hidden gems, and money-saving tips.</p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <div>
+                            <strong>500+</strong>
+                            <span>Destinations</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-wallet"></i>
+                        <div>
+                            <strong>Budget-Friendly</strong>
+                            <span>Student Discounts</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-leaf"></i>
+                        <div>
+                            <strong>Eco-Conscious</strong>
+                            <span>Sustainable Options</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Planning Form -->
+    <section class="planning-section">
+        <div class="container">
+            <div class="form-card">
+                <h2 class="section-title">
+                    <i class="fas fa-magic"></i>
+                    Create Your Itinerary
+                </h2>
+                <form id="travelForm" class="travel-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="destination">
+                                <i class="fas fa-map-pin"></i>
+                                Destination
+                            </label>
+                            <input type="text" id="destination" name="destination" placeholder="e.g., Paris, Tokyo, Bali" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="duration">
+                                <i class="fas fa-calendar-days"></i>
+                                Duration (days)
+                            </label>
+                            <input type="number" id="duration" name="duration" min="1" max="30" placeholder="7" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="budget">
+                                <i class="fas fa-dollar-sign"></i>
+                                Total Budget (USD)
+                            </label>
+                            <input type="number" id="budget" name="budget" min="100" placeholder="1500" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="groupSize">
+                                <i class="fas fa-users"></i>
+                                Group Size
+                            </label>
+                            <input type="number" id="groupSize" name="groupSize" min="1" max="20" placeholder="1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="interests">
+                            <i class="fas fa-heart"></i>
+                            Interests
+                        </label>
+                        <div class="interest-tags" id="interestTags">
+                            <button type="button" class="tag" data-interest="culture">Culture</button>
+                            <button type="button" class="tag" data-interest="adventure">Adventure</button>
+                            <button type="button" class="tag" data-interest="food">Food</button>
+                            <button type="button" class="tag" data-interest="nightlife">Nightlife</button>
+                            <button type="button" class="tag" data-interest="nature">Nature</button>
+                            <button type="button" class="tag" data-interest="history">History</button>
+                            <button type="button" class="tag" data-interest="art">Art</button>
+                            <button type="button" class="tag" data-interest="beaches">Beaches</button>
+                        </div>
+                        <input type="hidden" id="interests" name="interests">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="travelStyle">
+                            <i class="fas fa-compass"></i>
+                            Travel Style
+                        </label>
+                        <select id="travelStyle" name="travelStyle">
+                            <option value="budget">Budget Backpacker</option>
+                            <option value="balanced" selected>Balanced Explorer</option>
+                            <option value="comfort">Comfort Seeker</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="generateBtn">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        Generate My Itinerary
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Loading State -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loader"></div>
+            <p class="loading-text">Creating your personalized itinerary...</p>
+            <p class="loading-subtext">Finding the best student deals and hidden gems</p>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <section class="results-section" id="resultsSection" style="display: none;">
+        <div class="container">
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn-secondary" id="saveBtn">
+                    <i class="fas fa-download"></i>
+                    Save as PDF
+                </button>
+                <button class="btn-secondary" id="shareBtn">
+                    <i class="fas fa-share-nodes"></i>
+                    Share
+                </button>
+                <button class="btn-secondary" id="newPlanBtn">
+                    <i class="fas fa-plus"></i>
+                    New Plan
+                </button>
+            </div>
+
+            <!-- Results Content -->
+            <div id="resultsContent"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-plane-departure"></i> Student Travel AI</h3>
+                    <p>Empowering students to explore the world affordably</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Features</h4>
+                    <ul>
+                        <li>Budget Optimization</li>
+                        <li>Student Discounts</li>
+                        <li>Sustainable Travel</li>
+                        <li>Local Insights</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Student Travel AI. Built with ❤️ for students.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
