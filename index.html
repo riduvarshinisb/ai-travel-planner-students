@@ -1,83 +1,48 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI Travel Planner — Students</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Travel Planner for Students</title>
+  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body class="dark">
-  <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">✈️</div>
-        <div>
-          <h1>AI Travel Planner</h1>
-          <p class="sub">Student-friendly, budget-first itineraries</p>
-        </div>
-      </div>
-      <div class="controls">
-        <button id="modeToggle" class="btn ghost">Light</button>
-      </div>
-    </header>
-
-    <main class="main-grid">
-      <section class="panel form-panel glass">
-        <h2>Plan a trip</h2>
-        <form id="trip-form">
-          <label>Destination
-            <input id="destination" name="destination" placeholder="e.g., Lisbon, Portugal" required />
-          </label>
-
-          <div class="row">
-            <label>Days
-              <input id="days" name="days" type="number" min="1" value="3" required />
-            </label>
-            <label>Budget (total)
-              <input id="budget" name="budget" type="text" placeholder="e.g., 200 EUR" required />
-            </label>
-          </div>
-
-          <label>Interests (comma separated)
-            <input id="interests" placeholder="museums, coffee shops, beaches" />
-          </label>
-
-          <label>Transport preference
-            <select id="transport">
-              <option>Budget (public)</option>
-              <option>Mixed</option>
-              <option>Comfort</option>
-            </select>
-          </label>
-
-          <div class="actions">
-            <button id="generate" class="btn primary">Generate itinerary</button>
-            <button id="downloadBtn" type="button" class="btn ghost" disabled>Download JSON</button>
-            <button id="copyBtn" type="button" class="btn ghost" disabled>Copy</button>
-          </div>
-        </form>
-
-        <div id="notes" class="notes">
-          Tip: Start dark — switch to light if you prefer. The app focuses on cheap hostels, student discounts & free activities.
-        </div>
-      </section>
-
-      <section class="panel map-panel glass">
-        <h3>Map</h3>
-        <div id="map" style="height:300px;border-radius:12px;overflow:hidden"></div>
-      </section>
-
-      <section class="panel results-panel glass" id="results">
-        <h2>Itinerary</h2>
-        <div id="itineraryContainer" class="itinerary"></div>
-      </section>
-    </main>
-
-  </div>
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="dark-mode">
+  <header>
+    <nav class="glass">
+      <h1><i class="fas fa-plane"></i> AI Travel Planner</h1>
+      <button id="themeToggle" class="btn-accent"><i class="fas fa-moon"></i></button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="formSection">
+      <form id="tripForm" class="glass form-card">
+        <h2>Plan Your Student Adventure</h2>
+        <input type="text" id="destination" placeholder="Destination (e.g., Paris)" required>
+        <input type="number" id="days" placeholder="Trip Days (1-7)" min="1" max="7" required>
+        <input type="number" id="budget" placeholder="Budget ($USD, e.g., 300)" min="50" required>
+        <input type="text" id="interests" placeholder="Interests (e.g., culture, food, adventure)">
+        <button type="submit" class="btn-primary">Generate Itinerary <i class="fas fa-magic"></i></button>
+      </form>
+    </section>
+
+    <section id="itinerarySection" class="hidden">
+      <div class="glass itinerary-header">
+        <h2 id="tripTitle"></h2>
+        <div class="actions">
+          <button id="exportBtn" class="btn-accent"><i class="fas fa-download"></i> Export PDF</button>
+          <button id="shareBtn" class="btn-accent"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+      <div id="itineraryContent"></div>
+      <div id="mapContainer" class="map-glass"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
