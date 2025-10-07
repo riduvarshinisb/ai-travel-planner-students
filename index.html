@@ -12,34 +12,62 @@
 </head>
 <body class="dark-mode">
   <header>
-    <nav class="glass">
-      <h1><i class="fas fa-plane"></i> AI Travel Planner</h1>
-      <button id="themeToggle" class="btn-accent"><i class="fas fa-moon"></i></button>
+    <nav class="glass nav-flex" role="banner">
+      <div class="logo">
+        <i class="fas fa-plane-departure" aria-hidden="true"></i>
+        <h1>AI Travel Planner</h1>
+      </div>
+      <button id="themeToggle" class="btn-accent" aria-label="Toggle theme" title="Switch to light mode">
+        <i class="fas fa-moon"></i>
+      </button>
     </nav>
   </header>
 
   <main>
-    <section id="formSection">
-      <form id="tripForm" class="glass form-card">
-        <h2>Plan Your Student Adventure</h2>
-        <input type="text" id="destination" placeholder="Destination (e.g., Paris)" required>
-        <input type="number" id="days" placeholder="Trip Days (1-7)" min="1" max="7" required>
-        <input type="number" id="budget" placeholder="Budget ($USD, e.g., 300)" min="50" required>
-        <input type="text" id="interests" placeholder="Interests (e.g., culture, food, adventure)">
-        <button type="submit" class="btn-primary">Generate Itinerary <i class="fas fa-magic"></i></button>
-      </form>
+    <section id="formSection" aria-labelledby="formTitle">
+      <div class="glass form-card" role="form">
+        <h2 id="formTitle">Plan Your Budget Adventure</h2>
+        <p class="subtitle">Enter details for a student-friendly itinerary</p>
+        <form id="tripForm">
+          <div class="input-group">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" placeholder="e.g., Paris, France" required aria-required="true">
+          </div>
+          <div class="input-group">
+            <label for="days">Trip Duration (Days)</label>
+            <input type="number" id="days" placeholder="1-7" min="1" max="7" required aria-required="true">
+          </div>
+          <div class="input-group">
+            <label for="budget">Budget ($USD)</label>
+            <input type="number" id="budget" placeholder="e.g., 300" min="50" required aria-required="true">
+          </div>
+          <div class="input-group">
+            <label for="interests">Interests (Optional)</label>
+            <input type="text" id="interests" placeholder="e.g., culture, food, hiking">
+          </div>
+          <button type="submit" class="btn-primary" id="submitBtn">
+            <span class="btn-text">Generate Itinerary</span>
+            <div class="spinner hidden"><i class="fas fa-spinner fa-spin"></i></div>
+          </button>
+        </form>
+        <div id="errorToast" class="toast hidden" role="alert">Please fill all required fields.</div>
+      </div>
     </section>
 
-    <section id="itinerarySection" class="hidden">
+    <section id="itinerarySection" class="hidden" aria-labelledby="itineraryTitle">
       <div class="glass itinerary-header">
-        <h2 id="tripTitle"></h2>
+        <h2 id="tripTitle" class="gradient-text"></h2>
         <div class="actions">
-          <button id="exportBtn" class="btn-accent"><i class="fas fa-download"></i> Export PDF</button>
-          <button id="shareBtn" class="btn-accent"><i class="fas fa-share"></i> Share</button>
+          <button id="exportBtn" class="btn-accent" aria-label="Export to PDF"><i class="fas fa-download"></i> PDF</button>
+          <button id="shareBtn" class="btn-accent" aria-label="Share plan"><i class="fas fa-share-alt"></i> Share</button>
+          <button id="newPlanBtn" class="btn-secondary" aria-label="Plan new trip"><i class="fas fa-plus"></i> New Plan</button>
         </div>
       </div>
-      <div id="itineraryContent"></div>
-      <div id="mapContainer" class="map-glass"></div>
+      <div id="itineraryContent" class="itinerary-grid"></div>
+      <div id="mapContainer" class="glass map-container hidden">
+        <h3 class="map-title">Interactive Map of Highlights</h3>
+        <div id="map"></div>
+      </div>
     </section>
   </main>
 
