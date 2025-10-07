@@ -1,168 +1,84 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// /api/generate.js
+// Serverless function for Vercel — uses @google/genai and the GEMINI_API_KEY env var
+import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const body = req.body || {};
+  const { destination, days, budget, interests, transport } = body;
+
+  if (!destination || !days || !budget) {
+    return res.status(400).json({ error: "destination, days and budget are required" });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  // initialize client (reads GEMINI_API_KEY from env if not provided explicitly)
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  try {
-    const { destination, duration, budget, interests, travelStyle, groupSize } = req.body;
-
-    if (!destination || !duration || !budget) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured' });
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-    const prompt = `You are an expert travel planner specializing in student travel. Create a detailed, budget-friendly travel itinerary with the following details:
-
-Destination: ${destination}
-Duration: ${duration} days
-Budget: $${budget} (total for all ${duration} days)
-Interests: ${interests || 'general sightseeing'}
-Travel Style: ${travelStyle || 'balanced'}
-Group Size: ${groupSize || 1} person(s)
-
-Please provide a comprehensive response in the following JSON format (return ONLY valid JSON, no markdown or extra text):
-
+  // Prompt asks for a SHORT, CONCISE JSON-only itinerary designed for students and budgets.
+  const prompt = `
+You are a travel assistant that writes SHORT, CONCISE, student-friendly day-by-day itineraries.
+Return JSON only (no extra text). Use local currency. Keep each day's content brief.
+Schema:
 {
-  "destination": "destination name",
-  "overview": "2-3 sentence trip overview",
-  "budgetBreakdown": {
-    "accommodation": number,
-    "food": number,
-    "transportation": number,
-    "activities": number,
-    "miscellaneous": number
-  },
-  "dailyItinerary": [
-    {
-      "day": 1,
-      "title": "Day title",
-      "activities": [
-        {
-          "time": "09:00 AM",
-          "activity": "Activity name",
-          "description": "Brief description",
-          "cost": number,
-          "duration": "2 hours",
-          "location": "Place name",
-          "studentTip": "Special tip for students"
-        }
-      ],
-      "meals": {
-        "breakfast": "Restaurant/cafe name - $X",
-        "lunch": "Restaurant/cafe name - $X",
-        "dinner": "Restaurant/cafe name - $X"
-      },
-      "estimatedDailyCost": number
-    }
-  ],
-  "accommodationSuggestions": [
-    {
-      "name": "Hostel/hotel name",
-      "type": "Hostel/Hotel/Airbnb",
-      "pricePerNight": number,
-      "description": "Brief description",
-      "studentDiscount": "Yes/No - details if applicable",
-      "location": "Area name"
-    }
-  ],
-  "transportationTips": [
-    {
-      "type": "Bus/Train/Metro/etc",
-      "description": "How to use and cost",
-      "studentDiscount": "Details if available",
-      "estimatedCost": number
-    }
-  ],
-  "studentDiscounts": [
-    {
-      "place": "Museum/attraction name",
-      "normalPrice": number,
-      "studentPrice": number,
-      "requirement": "Valid student ID"
-    }
-  ],
-  "localStudentInsights": [
-    "Insider tip 1",
-    "Insider tip 2",
-    "Insider tip 3"
-  ],
-  "sustainableOptions": [
-    {
-      "category": "Transportation/Food/Activities",
-      "option": "Eco-friendly alternative",
-      "impact": "Environmental benefit"
-    }
-  ],
-  "packingList": [
-    "Essential item 1",
-    "Essential item 2"
-  ],
-  "safetyTips": [
-    "Safety tip 1",
-    "Safety tip 2"
-  ],
-  "moneySavingTips": [
-    "Tip 1",
-    "Tip 2",
-    "Tip 3"
-  ],
-  "weatherConsiderations": "Weather info and what to expect",
-  "emergencyInfo": {
-    "embassy": "Contact info",
-    "emergencyNumber": "Local emergency number",
-    "hospitals": "Nearby hospital info"
-  }
+ "title": "<short title>",
+ "destination":"<city/country>",
+ "days":[
+   {
+     "day": 1,
+     "summary": "<one sentence>",
+     "activities": [
+       {"time":"morning/afternoon/evening", "activity":"<short>", "est_cost":"<number and currency>"}
+     ],
+     "daily_cost":"<number and currency>"
+   }, ...
+ ],
+ "total_estimated_cost":"<number and currency>",
+ "recommended_hostels":[ {"name":"", "approx_price":"", "note":""} ],
+ "transport_tips":["short tip strings"],
+ "money_saving_tips":["short tip strings"]
 }
+Now generate a concise itinerary for:
+- destination: ${destination}
+- days: ${days}
+- budget: ${budget}
+- interests: ${interests || "general student-friendly experiences"}
+- transport preference: ${transport || "budget"}
 
-Make sure all costs are realistic and add up to approximately the total budget. Focus on student-friendly, authentic experiences. Include free activities where possible.`;
+Keep answers short. Provide numeric costs rounded to nearest whole number.`;
+  try {
+    const resp = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      temperature: 0.2,
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text();
+    // The SDK exposes response.text in examples; fall back to JSON-stringify if missing.
+    const rawText = resp?.text ?? (typeof resp === "string" ? resp : JSON.stringify(resp));
 
-    // Clean up the response - remove markdown code blocks if present
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    // Parse JSON
-    let itinerary;
+    // try to parse JSON strictly; the model was asked to output JSON-only, but be robust
+    let parsed = null;
     try {
-      itinerary = JSON.parse(text);
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError);
-      console.error('Raw response:', text);
-      return res.status(500).json({ 
-        error: 'Failed to parse AI response',
-        details: 'The AI returned an invalid format. Please try again.'
-      });
+      parsed = JSON.parse(rawText);
+    } catch (e) {
+      // try to locate the first '{' and parse substring
+      const idx = rawText.indexOf("{");
+      if (idx >= 0) {
+        try {
+          parsed = JSON.parse(rawText.slice(idx));
+        } catch (e2) {
+          parsed = null;
+        }
+      }
     }
 
-    return res.status(200).json(itinerary);
-
-  } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ 
-      error: 'Failed to generate itinerary',
-      details: error.message 
-    });
+    return res.status(200).json({ success: true, raw: rawText, itinerary: parsed });
+  } catch (err) {
+    console.error("Gemini call failed:", err);
+    return res.status(500).json({ error: err.message || String(err) });
   }
 }
