@@ -1,158 +1,106 @@
-// /script.js - frontend behavior: form, map, fetch, export
-const form = document.getElementById("trip-form");
-const destInput = document.getElementById("destination");
-const daysInput = document.getElementById("days");
-const budgetInput = document.getElementById("budget");
-const interestsInput = document.getElementById("interests");
-const transportInput = document.getElementById("transport");
-const generateBtn = document.getElementById("generate");
-const itineraryContainer = document.getElementById("itineraryContainer");
-const downloadBtn = document.getElementById("downloadBtn");
-const copyBtn = document.getElementById("copyBtn");
-const modeToggle = document.getElementById("modeToggle");
+// Dark mode toggle
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+const isDark = localStorage.getItem('darkMode') !== 'false';
+body.classList.toggle('light-mode', !isDark);
+themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+themeToggle.addEventListener('click', () => {
+  body.classList.toggle('light-mode');
+  const dark = !body.classList.contains('light-mode');
+  localStorage.setItem('darkMode', dark);
+  themeToggle.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+});
 
-let latestItinerary = null;
-
-// dark/light toggle
-function applyMode(mode){
-  document.body.className = mode;
-  modeToggle.textContent = mode === "dark" ? "Light" : "Dark";
-  localStorage.setItem("mode", mode);
-}
-modeToggle.addEventListener("click", ()=> applyMode(document.body.classList.contains("dark") ? "light" : "dark"));
-applyMode(localStorage.getItem("mode") || "dark");
-
-// Leaflet map
-let map = L.map('map', {zoomControl:true, scrollWheelZoom:false}).setView([20,0],2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '© OpenStreetMap'
-}).addTo(map);
-let destMarker = null;
-
-async function geocodeAndCenter(q) {
-  try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
-    const data = await r.json();
-    if (data && data[0]) {
-      const lat = parseFloat(data[0].lat), lon = parseFloat(data[0].lon);
-      map.setView([lat, lon], 12);
-      if (destMarker) destMarker.remove();
-      destMarker = L.marker([lat, lon]).addTo(map).bindPopup(q).openPopup();
-    } else {
-      map.setView([20,0],3);
-      if (destMarker) destMarker.remove();
-    }
-  } catch (e) {
-    console.warn("Geocode failed", e);
-  }
-}
-
-function showLoading(on=true){
-  generateBtn.disabled = on;
-  generateBtn.textContent = on ? "Generating…" : "Generate itinerary";
-}
-
-form.addEventListener("submit", async (e)=>{
+// Form handling
+const form = document.getElementById('tripForm');
+const formSection = document.getElementById('formSection');
+const itinerarySection = document.getElementById('itinerarySection');
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const destination = destInput.value.trim();
-  const days = Number(daysInput.value);
-  const budget = budgetInput.value.trim();
-  const interests = interestsInput.value.trim();
-  const transport = transportInput.value;
-
-  if (!destination || !days || !budget) return alert("Please fill destination, days and budget.");
-
-  showLoading(true);
-  itineraryContainer.innerHTML = `<p class="meta">Asking Gemini for a short student itinerary…</p>`;
-  await geocodeAndCenter(destination);
+  const destination = document.getElementById('destination').value;
+  const days = document.getElementById('days').value;
+  const budget = document.getElementById('budget').value;
+  const interests = document.getElementById('interests').value || 'general';
 
   try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ destination, days, budget, interests, transport })
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destination, days, budget, interests })
     });
-    const data = await res.json();
-    if (!data || !data.success) {
-      itineraryContainer.innerHTML = `<pre class="meta">Error: ${data?.error || "no response"}</pre>`;
-      return;
-    }
-
-    // prefer parsed JSON returned from server; otherwise try to parse
-    let it = data.itinerary;
-    if (!it && data.raw) {
-      try { it = JSON.parse(data.raw); } catch {}
-    }
-    latestItinerary = it ?? { raw: data.raw };
-
-    renderItinerary(latestItinerary);
-    downloadBtn.disabled = false;
-    copyBtn.disabled = false;
-  } catch (err) {
-    itineraryContainer.innerHTML = `<pre class="meta">Request error: ${err.message}</pre>`;
-  } finally {
-    showLoading(false);
+    const data = await response.json();
+    displayItinerary(data);
+    formSection.classList.add('hidden');
+    itinerarySection.classList.remove('hidden');
+  } catch (error) {
+    alert('Error generating itinerary. Check console.');
+    console.error(error);
   }
 });
 
-function renderItinerary(it) {
-  if (!it) { itineraryContainer.innerHTML = "<p class='meta'>No itinerary returned.</p>"; return; }
-
-  if (it.raw && !it.days) {
-    itineraryContainer.innerHTML = `<pre class="meta">${escapeHtml(it.raw)}</pre>`;
-    return;
-  }
-
-  // Structured view
-  const title = it.title || `${it.destination} trip`;
-  const total = it.total_estimated_cost || "";
-  let html = `<div class="meta"><strong>${escapeHtml(title)}</strong> — ${escapeHtml(it.destination || "")} ${total ? `• ${escapeHtml(total)}` : ""}</div>`;
-  if (Array.isArray(it.days)) {
-    for (const day of it.days) {
-      html += `<div class="day-card"><div>
-                <h4>Day ${escapeHtml(String(day.day || ""))}</h4>
-                <div class="meta">${escapeHtml(day.summary || "")}</div>
-                <ul>`;
-      if (Array.isArray(day.activities)) {
-        for (const a of day.activities) {
-          html += `<li>${escapeHtml(a.time || "")} — ${escapeHtml(a.activity || "")} ${a.est_cost ? `<span class="meta">(${escapeHtml(a.est_cost)})</span>`: ""}</li>`;
-        }
-      }
-      html += `</ul></div><div class="meta">${escapeHtml(day.daily_cost || "")}</div></div>`;
-    }
-  }
-
-  if (Array.isArray(it.recommended_hostels) && it.recommended_hostels.length) {
-    html += `<div class="meta"><strong>Hostel picks</strong><ul>`;
-    for (const h of it.recommended_hostels) {
-      html += `<li>${escapeHtml(h.name||"")} — ${escapeHtml(h.approx_price||"")} ${h.note ? `• ${escapeHtml(h.note)}`:""}</li>`;
-    }
-    html += `</ul></div>`;
-  }
-
-  if (Array.isArray(it.transport_tips)) html += `<div class="meta"><strong>Transport tips</strong><ul>${it.transport_tips.map(t=>`<li>${escapeHtml(t)}</li>`).join("")}</ul></div>`;
-  if (Array.isArray(it.money_saving_tips)) html += `<div class="meta"><strong>Money-saving tips</strong><ul>${it.money_saving_tips.map(t=>`<li>${escapeHtml(t)}</li>`).join("")}</ul></div>`;
-
-  itineraryContainer.innerHTML = html;
+// Display itinerary
+function displayItinerary(data) {
+  document.getElementById('tripTitle').textContent = `${data.title}`;
+  const content = document.getElementById('itineraryContent');
+  content.innerHTML = data.itinerary.map(day => `
+    <div class="day-card">
+      <h3>Day ${day.day}: ${day.title}</h3>
+      <ul>${day.activities.map(act => `<li>${act} ($${day.costs[act] || 'Free'})</li>`).join('')}</ul>
+      <p class="cost">Daily Total: $${day.totalCost} | Tips: ${day.tips}</p>
+    </div>
+  `).join('');
+  initMap(data.locations);
+  setupExport(data);
 }
 
-function escapeHtml(s){
-  return String(s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+let map;
+function initMap(locations) {
+  const mapContainer = document.getElementById('mapContainer');
+  mapContainer.style.display = 'block';
+  map = L.map('map').setView([locations[0]?.lat || 51.505, locations[0]?.lng || -0.09], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  locations.forEach(loc => {
+    if (loc.lat && loc.lng) {
+      L.marker([loc.lat, loc.lng]).addTo(map).bindPopup(loc.name);
+    }
+  });
+  // Add polyline for route if multiple points
+  if (locations.length > 1) {
+    const path = locations.map(loc => [loc.lat, loc.lng]);
+    L.polyline(path, { color: '#f97316' }).addTo(map);
+  }
 }
 
-// download & copy
-downloadBtn.addEventListener("click", ()=>{
-  if (!latestItinerary) return;
-  const blob = new Blob([JSON.stringify(latestItinerary, null, 2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = `itinerary-${Date.now()}.json`; a.click();
-  URL.revokeObjectURL(url);
-});
+// Export PDF
+function setupExport(data) {
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(data.title, 20, 20);
+    let y = 30;
+    data.itinerary.forEach(day => {
+      doc.setFontSize(12);
+      doc.text(`Day ${day.day}: ${day.title}`, 20, y);
+      y += 10;
+      day.activities.forEach(act => {
+        doc.text(`- ${act} ($${day.costs[act] || 'Free'})`, 25, y);
+        y += 7;
+      });
+      doc.text(`Total: $${day.totalCost} | Tips: ${day.tips}`, 25, y);
+      y += 15;
+    });
+    doc.save(`${data.title.replace(/\s+/g, '_')}.pdf`);
+  });
 
-copyBtn.addEventListener("click", async ()=>{
-  if (!latestItinerary) return;
-  await navigator.clipboard.writeText(JSON.stringify(latestItinerary, null, 2));
-  copyBtn.textContent = "Copied!";
-  setTimeout(()=>copyBtn.textContent = "Copy", 1500);
-});
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const url = `${window.location.origin}?dest=${encodeURIComponent(data.title)}`;
+    navigator.clipboard.writeText(url).then(() => alert('Share link copied!'));
+  });
+}
+
+// Load map in container
+const mapContainer = document.getElementById('mapContainer');
+const mapDiv = document.createElement('div');
+mapDiv.id = 'map';
+mapContainer.appendChild(mapDiv);
