@@ -104,3 +104,11 @@ const mapContainer = document.getElementById('mapContainer');
 const mapDiv = document.createElement('div');
 mapDiv.id = 'map';
 mapContainer.appendChild(mapDiv);
+// Theme toggle with smooth transition
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+let isDark = localStorage.getItem('darkMode') !== 'false';
+body.classList.toggle('light-mode', !isDark);
+themeToggle.querySelector('i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+themeToggle.addEventListener('click', () => {
+  isDark =
