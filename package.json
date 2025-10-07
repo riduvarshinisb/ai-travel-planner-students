@@ -8,10 +8,22 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.7.1",
+    "jspdf": "^3.0.3",
     "jsPDF": "^2.5.1",
     "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "serve": "^14.2.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/riduvarshinisb/ai-travel-planner-students.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/riduvarshinisb/ai-travel-planner-students/issues"
+  },
+  "homepage": "https://github.com/riduvarshinisb/ai-travel-planner-students#readme"
 }
