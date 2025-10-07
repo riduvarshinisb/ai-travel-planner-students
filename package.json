@@ -1,14 +1,17 @@
-{
+// {
   "name": "ai-travel-planner-students",
   "version": "1.0.0",
+  "description": "AI Travel Planner for Students",
   "main": "index.js",
   "scripts": {
-    "start": "node api/generate.js"
+    "start": "serve ."
   },
   "dependencies": {
-    "@google/generative-ai": "^0.5.0"
+    "@google/generative-ai": "^0.7.1",
+    "jsPDF": "^2.5.1",
+    "leaflet": "^1.9.4"
   },
-  "engines": {
-    "node": ">=18"
+  "devDependencies": {
+    "serve": "^14.2.1"
   }
 }
